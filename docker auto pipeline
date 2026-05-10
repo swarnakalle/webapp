@@ -1,0 +1,31 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/swarnakalle/webapp.git'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'docker build -t $image .'
+            }
+        }
+        stage ('registery') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'dockerdeploy') {
+                        sh 'docker tag $image swarnakalle/djrepo:$tag'
+                        sh 'docker push swarnakalle/djrepo:$tag'
+                    }
+                }
+            }
+        }
+        stage('deploy') {
+            steps {
+                sh 'docker run -itd --name $cont -p $hp:80 swarnakalle/djrepo:$tag'
+            }
+        }
+    }
+}
